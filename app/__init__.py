@@ -1,4 +1,6 @@
 import logging
+
+
 import os
 from celery import Celery
 from flask import Flask
@@ -10,6 +12,7 @@ from config import STATIC_URL_PATH
 debug_mode = os.getenv('DEBUG_MODE', False)
 logging_directory = "log"
 logFormatter = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
 
 if not os.path.exists(logging_directory):
     os.mkdir(logging_directory)

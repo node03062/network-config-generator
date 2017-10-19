@@ -9,6 +9,13 @@ from mako.template import Template
 
 logger = logging.getLogger("confgen")
 
+"""
+Do you want LF or CR/LF?
+"""
+
+LF = False
+
+
 
 class TemplateSyntaxException(BaseException):
     """
@@ -44,15 +51,16 @@ class MakoConfigGenerator:
         return sorted(list(self._template_variable_dict.keys()))
 
     def __init__(self, template_string=""):
-        if type(template_string) is not str:
-            raise ValueError("template string must be a string type")
+        #if type(template_string) is not str:
+        #    raise ValueError("template string must be a string type")
 
         self.template_string = template_string
 
         self._parse_variable_from_template_string()
 
     def _parse_variable_from_template_string(self):
-        """populates the template_variables list with the variables that are found in the config template
+        """
+        populates the template_variables list with the variables that are found in the config template
 
         """
         self._template_variable_dict = dict()
@@ -124,7 +132,11 @@ class MakoConfigGenerator:
                 if line != "":
                     result += line
                     if len(lines) != counter:
-                         result += "\n"
+                        # do you want LF or LF/CR?
+                        if LF:
+                             result += "\n"
+                        else:
+                             result += "\r\n"
                 counter += 1
 
         return result
