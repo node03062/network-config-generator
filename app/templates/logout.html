@@ -1,0 +1,7 @@
+{% block body %}
+{% if session['logged_in'] %}
+<p>You're logged in already!</p>
+{% else %}
+<p>You're logged out!</p>
+{% endif %}
+{% endblock %}

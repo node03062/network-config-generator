@@ -3,12 +3,14 @@ common views for the web service
 """
 import os
 
-from flask import redirect, render_template, jsonify, request, url_for
+#from flask import redirect, render_template, jsonify, request, url_for
 from app import app
 from app.utils.appliance import verify_appliance_status, get_local_ip_addresses
 from app.utils.export import get_appliance_ftp_password
 from config import ROOT_URL
 
+# login
+from flask import flash, redirect, render_template, request, session, abort, url_for, jsonify
 
 @app.route("/")
 def redirect_to_homepage():
@@ -19,13 +21,29 @@ def redirect_to_homepage():
     return redirect(ROOT_URL)
 
 
+@app.route(ROOT_URL + "login", methods=['POST'])
+def do_admin_login():
+    if request.form['password'] == 'password' and request.form['username'] == 'admin':
+        session['logged_in'] = True
+    else:
+        flash('wrong password!')
+    return home()
+
+@app.route(ROOT_URL + "logout")
+def logout():
+    session['logged_in'] = False
+    return home()
+
 @app.route(ROOT_URL)
 def home():
     """homepage for the web service
 
     :return:
     """
-    return render_template("home.html")
+    if not session.get('logged_in'):
+        return render_template("login.html")
+    else:
+        return render_template("home.html")
 
 
 @app.route(ROOT_URL + "shell")

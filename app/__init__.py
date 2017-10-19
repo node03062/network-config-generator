@@ -1,12 +1,15 @@
 import logging
 
-
 import os
 from celery import Celery
 from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
 from werkzeug.contrib.fixers import ProxyFix
 from config import STATIC_URL_PATH
+
+# login
+#from flask import Flask, flash, redirect, render_template, request, session, abort
+
 
 # configure logging
 debug_mode = os.getenv('DEBUG_MODE', False)
