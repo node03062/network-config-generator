@@ -4,14 +4,14 @@ views for the Config Template data object
 import csv
 import logging
 import io
-from flask import render_template, url_for, redirect, request, flash, jsonify
+from flask import render_template, url_for, redirect, request, flash, jsonify, session
 from sqlalchemy.exc import IntegrityError
 from app import app, db
 from app.models import ConfigTemplate, Project, TemplateValueSet
 from app.forms import ConfigTemplateForm, EditConfigTemplateValuesForm
-from app.utils.appliance import get_local_ip_addresses, verify_appliance_status
-from app.utils.export import get_appliance_ftp_password
-from app.tasks import update_local_ftp_configurations, update_local_tftp_configurations
+#from app.utils.appliance import get_local_ip_addresses, verify_appliance_status
+#from app.utils.export import get_appliance_ftp_password
+#from app.tasks import update_local_ftp_configurations, update_local_tftp_configurations
 from config import ROOT_URL
 
 logger = logging.getLogger()
@@ -25,8 +25,12 @@ def view_config_template(project_id, config_template_id):
     :param config_template_id:
     :return:
     """
-    parent_project = Project.query.filter(Project.id == project_id).first_or_404()
-    return render_template(
+    if not session.get('logged_in'):
+        return render_template("login.html")
+    else:
+        parent_project = Project.query.filter(Project.id == project_id).first_or_404()
+
+        return render_template(
         "config_template/view_config_template.html",
         project=parent_project,
         config_template=ConfigTemplate.query.filter(ConfigTemplate.id == config_template_id).first_or_404()
@@ -40,53 +44,57 @@ def add_config_template(project_id):
     :param project_id:
     :return:
     """
-    parent_project = Project.query.filter(Project.id == project_id).first_or_404()
+    if not session.get('logged_in'):
+        return render_template("login.html")
+    else:
 
-    form = ConfigTemplateForm(request.form)
+        parent_project = Project.query.filter(Project.id == project_id).first_or_404()
 
-    if form.validate_on_submit():
-        try:
-            config_template = ConfigTemplate(name="", project=parent_project)
+        form = ConfigTemplateForm(request.form)
 
-            config_template.name = form.name.data
-            config_template.template_content = form.template_content.data
-            config_template.project = parent_project
+        if form.validate_on_submit():
+            try:
+                config_template = ConfigTemplate(name="", project=parent_project)
 
-            db.session.add(config_template)
-            db.session.commit()
+                config_template.name = form.name.data
+                config_template.template_content = form.template_content.data
+                config_template.project = parent_project
 
-            flash("Config template <strong>%s</strong> successful created" % config_template.name, "success")
+                db.session.add(config_template)
+                db.session.commit()
 
-            return redirect(
-                url_for(
-                    "view_config_template",
-                    project_id=project_id,
-                    config_template_id=config_template.id
+                flash("Config template <strong>%s</strong> successful created" % config_template.name, "success")
+
+                return redirect(
+                    url_for(
+                        "view_config_template",
+                        project_id=project_id,
+                        config_template_id=config_template.id
+                    )
                 )
-            )
 
-        except IntegrityError as ex:
-            if "UNIQUE constraint failed" in str(ex):
-                msg = "Config Template name already in use, please use another one"
+            except IntegrityError as ex:
+                if "UNIQUE constraint failed" in str(ex):
+                    msg = "Config Template name already in use, please use another one"
 
-            else:
+                else:
+                    msg = "Config template was not created (unknown error, see log for details)"
+
+                logger.error(msg, exc_info=True)
+                flash(msg, "error")
+                db.session.rollback()
+
+            except Exception:
                 msg = "Config template was not created (unknown error, see log for details)"
+                logger.error(msg, exc_info=True)
+                flash(msg, "error")
 
-            logger.error(msg, exc_info=True)
-            flash(msg, "error")
-            db.session.rollback()
-
-        except Exception:
-            msg = "Config template was not created (unknown error, see log for details)"
-            logger.error(msg, exc_info=True)
-            flash(msg, "error")
-
-    return render_template(
-        "config_template/add_config_template.html",
-        project_id=project_id,
-        project=parent_project,
-        form=form
-    )
+        return render_template(
+            "config_template/add_config_template.html",
+            project_id=project_id,
+            project=parent_project,
+            form=form
+        )
 
 
 @app.route(ROOT_URL + "project/<int:project_id>/configtemplate/<int:config_template_id>/edit", methods=["GET", "POST"])
@@ -97,6 +105,7 @@ def edit_config_template(project_id, config_template_id):
     :param config_template_id:
     :return:
     """
+
     parent_project = Project.query.filter(Project.id == project_id).first_or_404()
     config_template = ConfigTemplate.query.filter(ConfigTemplate.id == config_template_id).first_or_404()
 
@@ -280,7 +289,7 @@ def export_configurations(project_id, config_template_id):
         project_id=project_id,
         project=project,
         config_template=config_template,
-        ftp_password=get_appliance_ftp_password(),
-        ip_addresses=get_local_ip_addresses(),
+        #ftp_password=get_appliance_ftp_password(),
+        #ip_addresses=get_local_ip_addresses(),
         appliance_status=verify_appliance_status()
     )

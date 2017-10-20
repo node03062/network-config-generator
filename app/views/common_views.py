@@ -12,6 +12,7 @@ from config import ROOT_URL
 # login
 from flask import flash, redirect, render_template, request, session, abort, url_for, jsonify
 
+
 @app.route("/")
 def redirect_to_homepage():
     """static redirect to the homepage
@@ -26,7 +27,7 @@ def do_admin_login():
     if request.form['password'] == 'password' and request.form['username'] == 'admin':
         session['logged_in'] = True
     else:
-        flash('wrong password!')
+        flash('The wrong username/password was entered! ', 'error')
     return home()
 
 @app.route(ROOT_URL + "logout")
@@ -61,7 +62,10 @@ def how_to_use():
 
     :return:
     """
-    return render_template("how_to_use.html")
+    if not session.get('logged_in'):
+        return render_template("login.html")
+    else:
+        return render_template("how_to_use.html")
 
 
 @app.route(ROOT_URL + "template_syntax")
@@ -70,7 +74,10 @@ def template_syntax():
 
     :return:
     """
-    return render_template("template_syntax.html")
+    if not session.get('logged_in'):
+        return render_template("login.html")
+    else:
+        return render_template("template_syntax.html")
 
 
 @app.route(ROOT_URL + "appliance")
